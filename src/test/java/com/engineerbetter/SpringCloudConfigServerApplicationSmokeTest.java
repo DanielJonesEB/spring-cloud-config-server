@@ -37,23 +37,23 @@ public class SpringCloudConfigServerApplicationSmokeTest
 	@Before
 	public void setup() throws Exception
 	{
-		File repoDir = tmpDir.newFolder("spring-cloud-config-repo");
-		Git git = Git.init().setDirectory(repoDir).call();
-		copyFixture("fixtures/example.properties", Paths.get(repoDir.getPath(), "application.properties"));
-		git.add().addFilepattern(".").call();
-		git.commit().setMessage("Add properties").call();
+		File repoDir = setupGitRepo();
 
 		serverContext = SpringApplication.run(
 			SpringCloudConfigServerApplication.class,
 			"--spring.cloud.config.server.git.uri=file://"+repoDir.getAbsolutePath()
 		);
+	}
 
+	private void startClient(boolean configEnabled)
+	{
 		clientContext = SpringApplication.run(
 			SpringCloudConfigClientApplication.class,
 			"--spring.jmx.enabled=false",
 			"--spring.profiles.active=client",
-			"--spring.cloud.config.enabled=true",
+			"--spring.cloud.config.enabled="+configEnabled,
 			"--spring.cloud.config.uri=http://localhost:8080",
+			"--my.key=default-value",
 			"--server.port=8081"
 		);
 	}
@@ -69,6 +69,7 @@ public class SpringCloudConfigServerApplicationSmokeTest
 	@Test
 	public void returnsOk()
 	{
+		startClient(true);
 		ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8080/app/default/", String.class);
 		assertThat(response.getStatusCode(), is(HttpStatus.OK));
 	}
@@ -77,8 +78,29 @@ public class SpringCloudConfigServerApplicationSmokeTest
 	@Test
 	public void clientGetsValueFromServer()
 	{
+		startClient(true);
 		ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8081/", String.class);
 		assertThat(response.getBody(), is("test-value"));
+	}
+
+
+	@Test
+	public void clientGetsDefaultValueWhenCloudConfigDisabled()
+	{
+		startClient(false);
+		ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8081/", String.class);
+		assertThat(response.getBody(), is("default-value"));
+	}
+
+
+	private File setupGitRepo() throws Exception
+	{
+		File repoDir = tmpDir.newFolder("spring-cloud-config-repo");
+		Git git = Git.init().setDirectory(repoDir).call();
+		copyFixture("fixtures/example.properties", Paths.get(repoDir.getPath(), "application.properties"));
+		git.add().addFilepattern(".").call();
+		git.commit().setMessage("Add properties").call();
+		return repoDir;
 	}
 
 
