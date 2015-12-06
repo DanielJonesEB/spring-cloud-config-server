@@ -27,7 +27,7 @@ import com.engineerbetter.fixtures.SpringCloudConfigClientApplication;
 public class SpringCloudConfigServerApplicationSmokeTest
 {
 	@Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
+	public TemporaryFolder tmpDir = new TemporaryFolder();
 	private RestTemplate restTemplate = new TestRestTemplate();
 
 	private ConfigurableApplicationContext serverContext;
