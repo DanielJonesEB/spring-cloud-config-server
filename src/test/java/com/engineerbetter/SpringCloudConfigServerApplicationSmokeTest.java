@@ -62,7 +62,11 @@ public class SpringCloudConfigServerApplicationSmokeTest
 	public void teardown()
 	{
 		serverContext.close();
-		clientContext.close();
+
+		if(clientContext != null)
+		{
+			clientContext.close();
+		}
 	}
 
 
@@ -87,6 +91,16 @@ public class SpringCloudConfigServerApplicationSmokeTest
 	@Test
 	public void clientGetsDefaultValueWhenCloudConfigDisabled()
 	{
+		startClient(false);
+		ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8081/", String.class);
+		assertThat(response.getBody(), is("default-value"));
+	}
+
+
+	@Test
+	public void clientGetsDefaultValueWhenCloudConfigServerUnreachable()
+	{
+		serverContext.close();
 		startClient(false);
 		ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8081/", String.class);
 		assertThat(response.getBody(), is("default-value"));
