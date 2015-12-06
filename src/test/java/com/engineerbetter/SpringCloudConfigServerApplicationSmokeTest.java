@@ -45,18 +45,6 @@ public class SpringCloudConfigServerApplicationSmokeTest
 		);
 	}
 
-	private void startClient(boolean configEnabled)
-	{
-		clientContext = SpringApplication.run(
-			SpringCloudConfigClientApplication.class,
-			"--spring.jmx.enabled=false",
-			"--spring.profiles.active=client",
-			"--spring.cloud.config.enabled="+configEnabled,
-			"--spring.cloud.config.uri=http://localhost:8080",
-			"--my.key=default-value",
-			"--server.port=8081"
-		);
-	}
 
 	@After
 	public void teardown()
@@ -121,5 +109,19 @@ public class SpringCloudConfigServerApplicationSmokeTest
 	{
 		File fixtureFile = new File(getClass().getClassLoader().getResource(fixture).getFile());
 		Files.copy(fixtureFile.toPath(), destination);
+	}
+
+
+	private void startClient(boolean configEnabled)
+	{
+		clientContext = SpringApplication.run(
+			SpringCloudConfigClientApplication.class,
+			"--spring.jmx.enabled=false",
+			"--spring.profiles.active=client",
+			"--spring.cloud.config.enabled="+configEnabled,
+			"--spring.cloud.config.uri=http://localhost:8080",
+			"--my.key=default-value",
+			"--server.port=8081"
+		);
 	}
 }
