@@ -10,15 +10,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.eclipse.jgit.api.Git;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.TestRestTemplate;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
+
+import com.engineerbetter.fixtures.SpringCloudConfigClientApplication;
 
 public class SpringCloudConfigServerApplicationSmokeTest
 {
@@ -26,17 +30,39 @@ public class SpringCloudConfigServerApplicationSmokeTest
     public TemporaryFolder tmpDir = new TemporaryFolder();
 	private RestTemplate restTemplate = new TestRestTemplate();
 
+	private ConfigurableApplicationContext serverContext;
+	private ConfigurableApplicationContext clientContext;
+
 
 	@Before
 	public void setup() throws Exception
 	{
 		File repoDir = tmpDir.newFolder("spring-cloud-config-repo");
 		Git git = Git.init().setDirectory(repoDir).call();
-		copyFixture("fixtures/application.properties", Paths.get(repoDir.getPath(), "application.properties"));
-		git.commit().setAll(true).setMessage("Add properties").call();
+		copyFixture("fixtures/example.properties", Paths.get(repoDir.getPath(), "application.properties"));
+		git.add().addFilepattern(".").call();
+		git.commit().setMessage("Add properties").call();
 
-		String arg = "--spring.cloud.config.server.git.uri=file://"+repoDir.getAbsolutePath();
-		SpringApplication.run(SpringCloudConfigServerApplication.class, arg);
+		serverContext = SpringApplication.run(
+			SpringCloudConfigServerApplication.class,
+			"--spring.cloud.config.server.git.uri=file://"+repoDir.getAbsolutePath()
+		);
+
+		clientContext = SpringApplication.run(
+			SpringCloudConfigClientApplication.class,
+			"--spring.jmx.enabled=false",
+			"--spring.profiles.active=client",
+			"--spring.cloud.config.enabled=true",
+			"--spring.cloud.config.uri=http://localhost:8080",
+			"--server.port=8081"
+		);
+	}
+
+	@After
+	public void teardown()
+	{
+		serverContext.close();
+		clientContext.close();
 	}
 
 
@@ -45,6 +71,14 @@ public class SpringCloudConfigServerApplicationSmokeTest
 	{
 		ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8080/app/default/", String.class);
 		assertThat(response.getStatusCode(), is(HttpStatus.OK));
+	}
+
+
+	@Test
+	public void clientGetsValueFromServer()
+	{
+		ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8081/", String.class);
+		assertThat(response.getBody(), is("test-value"));
 	}
 
 

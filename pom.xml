@@ -46,6 +46,12 @@
 			<version>4.1.1.201511131810-r</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-config-client</artifactId>
+			<version>${spring-cloud-version}</version>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 
 	<build>
