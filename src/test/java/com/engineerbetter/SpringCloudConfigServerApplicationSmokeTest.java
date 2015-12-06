@@ -73,7 +73,6 @@ public class SpringCloudConfigServerApplicationSmokeTest
 	@Test
 	public void returnsOk()
 	{
-		startClient(true);
 		ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8080/app/default/", String.class);
 		assertThat(response.getStatusCode(), is(HttpStatus.OK));
 	}
